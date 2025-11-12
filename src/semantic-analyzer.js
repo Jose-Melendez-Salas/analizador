@@ -989,7 +989,7 @@ export function analyzeSemantics(ast) { // <--- AHORA RECIBE EL AST
         }
 
         const analyzer = new SemanticAnalyzer();
-        analyzer.analyzeNode(ast); // <--- ANALIZA EL AST REAL DE ACORN
+        analyzer.analyzeNode(ast); 
 
         const report = analyzer.generateReport();
 
