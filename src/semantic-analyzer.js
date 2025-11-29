@@ -3,7 +3,7 @@ class SymbolTable {
         this.parent = parent;
         this.symbols = new Map();
         this.children = [];
-        this.scopeType = 'blocnpm run devk'; 
+        this.scopeType = 'block'; 
     }
 
         define(name, info) {
@@ -87,8 +87,9 @@ class SemanticAnalyzer {
             { name: 'JSON', type: 'object', builtin: true },
 
             // Global functions
-            { name: 'parseInt', type: 'function', builtin: true },
-            { name: 'parseFloat', type: 'function', builtin: true },
+            { name: 'parseInt', type: 'function', builtin: true, returnType: 'number' }, 
+            { name: 'parseFloat', type: 'function', builtin: true, returnType: 'number' },
+            { name: 'prompt', type: 'function', builtin: true, returnType: 'string' },
             { name: 'isNaN', type: 'function', builtin: true },
             { name: 'isFinite', type: 'function', builtin: true },
             { name: 'eval', type: 'function', builtin: true },
@@ -998,7 +999,8 @@ export function analyzeSemantics(ast) { // <--- AHORA RECIBE EL AST
             errorCount: analyzer.errors.length,
             warningCount: analyzer.warnings.length,
             errors: analyzer.errors,
-            warnings: analyzer.warnings
+            warnings: analyzer.warnings,
+            symbolTable: analyzer.globalScope
         };
 
     } catch (error) {

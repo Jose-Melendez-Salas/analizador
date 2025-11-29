@@ -1,3 +1,5 @@
+// src/intermediate-gen.js
+
 export class QuadrupleGenerator {
     constructor() {
         this.instructions = []; // Tabla de cuádruplos
@@ -43,6 +45,11 @@ export class QuadrupleGenerator {
                 node.body.forEach(stmt => this.traverse(stmt));
                 break;
 
+            case 'ExpressionStatement':
+                // Simplemente "desempaquetamos" la expresión y la visitamos
+                // Esto permite que líneas como "console.log(x);" o "x = 5;" se procesen
+                return this.traverse(node.expression);
+
             // --------------------------------------------
             // 2. VARIABLES Y ASIGNACIONES
             // --------------------------------------------
@@ -67,19 +74,32 @@ export class QuadrupleGenerator {
                 const left = this.traverse(node.left);
                 const right = this.traverse(node.right);
                 const temp = this.newTemp();
-                // Mapeamos operadores para que se vean bonitos en la tabla
+                
                 let op = node.operator;
                 if (op === '==') op = 'EQ';
                 if (op === '!=') op = 'NEQ';
                 if (op === '===') op = 'EQ_STRICT';
+                if (op === '!==') op = 'NEQ_STRICT';
 
                 this.emit(op, left, right, temp);
                 return temp;
 
             case 'NumericLiteral':
             case 'Literal':
+                // CORRECCIÓN: Si es un string, le agregamos comillas para que la VM
+                // sepa que es texto y no una variable.
+                if (typeof node.value === 'string') {
+                    return `"${node.value}"`; 
+                }
                 return node.value;
-
+                
+                case 'TemplateLiteral':
+                 // Simplificación: tomamos el valor crudo del string
+                 // (Nota: esto no evaluará las variables ${} dentro, pero evitará el crash)
+                 let rawStr = "";
+                 node.quasis.forEach(q => rawStr += q.value.raw);
+                 return `"${rawStr}"`;
+                 
             case 'Identifier':
                 return node.name;
 
@@ -127,7 +147,7 @@ export class QuadrupleGenerator {
                 break;
 
             // --------------------------------------------
-            // 6. FUNCIONES (DECLARACIÓN) - LO NUEVO
+            // 6. FUNCIONES (DECLARACIÓN)
             // --------------------------------------------
             case 'FunctionDeclaration':
                 const funcName = node.id.name;
@@ -177,19 +197,36 @@ export class QuadrupleGenerator {
                     args.push(argTemp);
                 });
 
-                // 2. Emitir instrucción PARAM para cada argumento
+                // 2. Emitir instrucciones PARAM
                 args.forEach(arg => {
                     this.emit('PARAM', arg, null, null);
                 });
 
-                // 3. Llamar a la función
-                const funcToCall = node.callee.name;
-                const resultTemp = this.newTemp(); // Donde guardaremos lo que devuelva
+                // 3. Manejar la llamada
+                // Detectar si es console.log o console.warn
+                if (node.callee.type === 'MemberExpression' && node.callee.object.name === 'console') {
+                    const method = node.callee.property.name;
+                    // Emitimos CALL con un nombre especial que la VM reconocerá
+                    this.emit('CALL', `console_${method}`, args.length, null);
+                    return null;
+                } 
+                else if (node.callee.type === 'Identifier') {
+                    // Función normal definida por usuario
+                    const funcNameCall = node.callee.name;
+                    const resultTemp = this.newTemp();
+                    this.emit('CALL', `FUNC_${funcNameCall}`, args.length, resultTemp);
+                    return resultTemp;
+                }
+                break;
 
-                // CALL nombreFunc, numArgs, variableDestino
-                this.emit('CALL', `FUNC_${funcToCall}`, args.length, resultTemp);
-
-                return resultTemp;
+            // --------------------------------------------
+            // 9. OTROS NODOS (IGNORAR O ADVERTIR)
+            // --------------------------------------------
+            case 'ClassDeclaration':
+            case 'NewExpression':
+                // Implementación simple: Ignoramos clases por ahora para no romper el flujo
+                console.warn(`Generación de código para '${node.type}' no soportada en esta versión simple.`);
+                break;
 
             default:
                 console.warn(`Tipo de nodo no soportado: ${node.type}`);

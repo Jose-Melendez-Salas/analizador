@@ -6,6 +6,8 @@ import { analyzeSemantics } from "./semantic-analyzer.js";
 // --- NUEVAS IMPORTACIONES ---
 import { QuadrupleGenerator } from "./intermediate-gen.js";
 import { optimizeCode } from "./optimizer.js";
+//import { VirtualMachine } from "./vm.js";
+import { executeSafeCode } from "./executor.js";
 
 import {
   Code2, Play, RotateCcw, Upload, Download, Settings,
@@ -108,6 +110,9 @@ console.log("Contador:", counter());`);
   const [optimizedCode, setOptimizedCode] = useState([]);
   // ----------------------
 
+  // --- compilador ---
+  const [consoleOutput, setConsoleOutput] = useState([]);
+    // ----------------------
   const [analysisStats, setAnalysisStats] = useState(null);
   const [activePanel, setActivePanel] = useState("editor");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -172,6 +177,16 @@ console.log("Contador:", counter());`);
           // Optimización
           const optQuads = optimizeCode(quads);
           setOptimizedCode(optQuads);
+
+          // --- FASE 4: EJECUCIÓN (VIRTUAL MACHINE) ---
+          console.log("Ejecutando con motor nativo...");
+          
+          // NOTA: Aquí pasamos 'code' (el texto original), NO los cuádruplos.
+          // El análisis anterior sirve para mostrar las tablas y detectar errores previos.
+          const results = executeSafeCode(code);
+          
+          setConsoleOutput(results);
+
         } else {
           // Si hay errores, limpiamos las tablas siguientes
           setIntermediateCode([]);
@@ -220,6 +235,7 @@ console.log("Contador:", counter());`);
     setIntermediateCode([]);
     setOptimizedCode([]);
     setAnalysisStats(null);
+    setConsoleOutput([]);
   };
 
   const downloadResults = () => {
@@ -275,7 +291,8 @@ ESTADÍSTICAS:
     { id: "semantic", name: "Semántico", icon: Brain, color: "purple", result: semanticResult, type: "text" },
     // --- NUEVOS PANELES AGREGADOS ---
     { id: "intermediate", name: "Intermedio", icon: Layers, color: "orange", result: intermediateCode, type: "table" },
-    { id: "optimized", name: "Optimizado", icon: Rocket, color: "pink", result: optimizedCode, type: "table" }
+    { id: "optimized", name: "Optimizado", icon: Rocket, color: "pink", result: optimizedCode, type: "table" },
+    { id: "console", name: "Consola", icon: Terminal, color: "gray", result: consoleOutput, type: "console" }
   ];
 
   return (
@@ -508,10 +525,27 @@ ESTADÍSTICAS:
                     <div className={`h-full w-full p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-50'} overflow-hidden`}>
                       <QuadrupleTable
                         data={panel.result}
-                        emptyMessage={isAnalyzing ? "Procesando..." : "Ejecuta el análisis para generar este código."}
+                        emptyMessage={isAnalyzing ? "Procesando..." : "Ejecuta el análisis para generar código."}
                       />
                     </div>
+                  ) : panel.type === "console" ? (
+                    // --- RENDERIZADO DE CONSOLA ---
+                    <div className="h-full w-full bg-black rounded-lg p-4 font-mono text-sm overflow-auto border border-slate-700 shadow-inner">
+                      {panel.result && panel.result.length > 0 ? (
+                        panel.result.map((line, i) => (
+                          <div key={i} className="mb-1">
+                            <span className="text-slate-500 mr-2">{'>'}</span>
+                            <span className={line.startsWith('❌') ? 'text-red-400' : line.startsWith('[WARN]') ? 'text-yellow-400' : 'text-green-400'}>
+                              {line}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-slate-600 italic">Esperando ejecución...</span>
+                      )}
+                    </div>
                   ) : (
+                    // RENDERIZADO DE TEXTO (Léxico, Sintáctico, Semántico)
                     <pre className={`h-full w-full overflow-auto p-4 rounded-lg text-sm font-mono leading-relaxed ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border transition-colors duration-300`}>
                       {panel.result || (
                         <span className={`${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
