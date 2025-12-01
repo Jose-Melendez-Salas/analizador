@@ -23,7 +23,7 @@ function IDE() {
       id: 1,
       name: 'main.js',
       language: 'javascript',
-      content: `// VS Code Clone - Responsive Edition\n\nfunction sistema() {\n  return "Funciona en Desktop y Movil";\n}\n\nconsole.log(sistema());`,
+      content: `function sistema() {\n  return "Funciona en Desktop y Movil";\n}\n\nconsole.log(sistema());`,
       isDirty: false
     }
   ]);
@@ -41,8 +41,7 @@ function IDE() {
 
   // --- 3. ESTADOS DEL COMPILADOR ---
   const [terminalOutput, setTerminalOutput] = useState([
-    "Microsoft Windows [Version 10.0.19045] - JS Compiler Shell",
-    "(c) Microsoft Corporation. All rights reserved.",
+    "JS Compiler Shell",
     "",
     "C:\\Users\\Dev\\Project> "
   ]);
@@ -313,9 +312,9 @@ function IDE() {
         {/* A. ACTIVITY BAR (Oculta en móvil) */}
         <div className="hidden md:flex w-12 bg-[#333333] flex-col items-center py-2 gap-4 border-r border-[#252526] z-10 flex-shrink-0">
           <div className="border-l-2 pl-3 w-full flex justify-center cursor-pointer border-white opacity-100"><FileCode size={24} className="text-white" /></div>
-          <Search size={24} className="text-gray-500 opacity-60 hover:opacity-100 cursor-pointer" />
+          {/*<Search size={24} className="text-gray-500 opacity-60 hover:opacity-100 cursor-pointer" />
           <GitBranch size={24} className="text-gray-500 opacity-60 hover:opacity-100 cursor-pointer" />
-          <div className="mt-auto mb-2"><Settings size={24} className="text-gray-500 opacity-60 hover:opacity-100 cursor-pointer" /></div>
+          <div className="mt-auto mb-2"><Settings size={24} className="text-gray-500 opacity-60 hover:opacity-100 cursor-pointer" /></div>*/}
         </div>
 
         {/* B. SIDEBAR (DRAWER EN MÓVIL, COLUMNA EN DESKTOP) */}
