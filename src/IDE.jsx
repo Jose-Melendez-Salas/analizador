@@ -276,7 +276,7 @@ function IDE() {
             <Menu size={18} />
           </button>
 
-          <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Visual_Studio_Code_1.35_icon.svg" alt="VS Code" className="w-5 h-5 hidden md:block mr-1" />
+          {/*<img src="" alt="VS Code" className="w-5 h-5 hidden md:block mr-1" />*/}
 
           {/* Menú Desktop (Oculto en móvil para ahorrar espacio) */}
           <ul className="hidden md:flex h-full text-[#cccccc]">
